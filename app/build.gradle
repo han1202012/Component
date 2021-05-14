@@ -3,16 +3,23 @@ plugins {
     id 'kotlin-android'
 }
 
+println("Print Variable : rootProject.ext.androidConfig : ${rootProject.ext.androidConfig}")
+
+// def 相当于 Java 中的 Object
+// 声明 config 和 appId 变量 , 并为其赋值
+def androidConfig = rootProject.ext.androidConfig
+def appId = rootProject.ext.applicationId
+
 android {
-    compileSdkVersion 30
+    compileSdkVersion androidConfig.compileSdkVersion
     buildToolsVersion "30.0.3"
 
     defaultConfig {
-        applicationId "kim.hsl.component"
-        minSdkVersion 18
-        targetSdkVersion 30
-        versionCode 1
-        versionName "1.0"
+        applicationId appId["app"]
+        minSdkVersion androidConfig.minSdkVersion
+        targetSdkVersion androidConfig.targetSdkVersion
+        versionCode androidConfig.versionCode
+        versionName androidConfig.versionName
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }

@@ -1,0 +1,19 @@
+// ext 是 extension 扩展的含义
+// ext 后的 {} 花括号 , 是闭包 ,
+ext{
+    // 定义 android 变量 , 类型是字典 Map 集合
+    // 其中定义了若干键值对集合
+    androidConfig = [
+            compileSdkVersion : 30,
+            minSdkVersion : 18,
+            targetSdkVersion : 30,
+            versionCode : 1,
+            versionName : "1.0"
+    ]
+
+    applicationId = [
+            "app" : "kim.hsl.component",
+            "mylibrary" : "",
+            "mylibrary2" : "",
+    ]
+}
