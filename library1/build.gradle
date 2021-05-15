@@ -39,6 +39,11 @@ android {
                 if (!isModuleMode){
                     // 组件化模式下使用 ComponentAndroidManifest.xml 作为清单文件
                     manifest.srcFile 'src/main/component/AndroidManifest.xml'
+
+                    // 配置额外的 Java 源文件目录
+                    java.srcDirs 'src/main/component/java', 'src/main/java'
+                }else{
+                    // 集成模式 下使用默认设置
                 }
             }
         }
