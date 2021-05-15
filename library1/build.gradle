@@ -1,4 +1,11 @@
-apply plugin: 'com.android.application'
+// 根据 isModuleMode 动态切换 集成模式 / 组件模式
+if (isModuleMode){
+    // 集成模式
+    apply plugin: 'com.android.library'
+}else{
+    // 组件模式
+    apply plugin: 'com.android.application'
+}
 apply plugin: 'kotlin-android'
 
 
@@ -14,13 +21,27 @@ android {
     buildToolsVersion "30.0.3"
 
     defaultConfig {
-        applicationId appId["app"]
+        if (!isModuleMode){
+            // 组件模式 : 必须配置 applicationId
+            applicationId appId["library1"]
+        }
+
         minSdkVersion androidConfig.minSdkVersion
         targetSdkVersion androidConfig.targetSdkVersion
         versionCode androidConfig.versionCode
         versionName androidConfig.versionName
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+
+        // 资源配置
+        sourceSets{
+            main{
+                if (!isModuleMode){
+                    // 组件化模式下使用 ComponentAndroidManifest.xml 作为清单文件
+                    manifest.srcFile 'src/main/component/AndroidManifest.xml'
+                }
+            }
+        }
     }
 
     buildTypes {
@@ -48,10 +69,4 @@ dependencies {
     testImplementation 'junit:junit:4.+'
     androidTestImplementation 'androidx.test.ext:junit:1.1.2'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
-
-    if (isModuleMode){
-        // 集成模式下才能引用这两个 Library Module
-        implementation project(':library1')
-        implementation project(':library2')
-    }
 }

@@ -1,6 +1,12 @@
 // ext 是 extension 扩展的含义
 // ext 后的 {} 花括号 , 是闭包 ,
 ext{
+
+    // 是否是模块化模式
+    // 集成模式 true ( 默认模式 , 模块化 )
+    // 组件模式 false ( 组件化 )
+    isModuleMode = true
+
     // 定义 android 变量 , 类型是字典 Map 集合
     // 其中定义了若干键值对集合
     androidConfig = [
@@ -13,7 +19,16 @@ ext{
 
     applicationId = [
             "app" : "kim.hsl.component",
-            "mylibrary" : "",
-            "mylibrary2" : "",
+            "library1" : "kim.hsl.library1",
+            "mylibrary2" : "kim.hsl.library2",
+    ]
+
+    // androidx 版本号
+    androidxVersion = "1.2.0"
+
+    // 统一管理依赖库
+    dependencies = [
+            // ${} 表示引用之前定义的变量
+            "appcompat" : "androidx.appcompat:appcompat:${androidxVersion}"
     ]
 }
