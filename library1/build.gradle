@@ -33,6 +33,10 @@ android {
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
+        // 在 BuildConfig 中生成如下字段
+        // public static final boolean isModuleMode = false;
+        buildConfigField("boolean", "isModuleMode", String.valueOf(isModuleMode))
+
         // 资源配置
         sourceSets{
             main{
