@@ -5,7 +5,7 @@ ext{
     // 是否是模块化模式
     // 集成模式 true ( 默认模式 , 模块化 )
     // 组件模式 false ( 组件化 )
-    isModuleMode = false
+    isModuleMode = true
 
     // 定义 android 变量 , 类型是字典 Map 集合
     // 其中定义了若干键值对集合

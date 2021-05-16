@@ -1,3 +1,5 @@
+include ':router-compiler'
+include ':router-annotation'
 include ':library2'
 include ':library1'
 include ':app'
