@@ -56,7 +56,7 @@ dependencies {
 
     if (isModuleMode){
         // 集成模式下才能引用这两个 Library Module
-        implementation project(':library1')
-        implementation project(':library2')
+        implementation project(path: ':library1')
+        implementation project(path: ':library2')
     }
 }
