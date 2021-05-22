@@ -20,7 +20,7 @@ import javax.tools.Diagnostic;
 // 支持的注解类型
 @SupportedAnnotationTypes({"kim.hsl.router_annotation.Route"})
 // 支持的 Java 版本
-@SupportedSourceVersion(SourceVersion.RELEASE_7)
+@SupportedSourceVersion(SourceVersion.RELEASE_8)
 public class RouterProcessor extends AbstractProcessor {
 
     /**
@@ -53,8 +53,8 @@ public class RouterProcessor extends AbstractProcessor {
     public boolean process(Set<? extends TypeElement> set, RoundEnvironment roundEnvironment) {
         for (TypeElement typeElement: set){
             mMessager.printMessage(Diagnostic.Kind.NOTE, "SupportedAnnotationTypes : " + typeElement.getQualifiedName());
-        }
 
+        }
         return false;
     }
 }
