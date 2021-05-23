@@ -7,7 +7,7 @@ import androidx.annotation.Nullable;
 
 import kim.hsl.router_annotation.Route;
 
-@Route(path = "app/MainActivity")
+@Route(path = "/app/MainActivity")
 public class MainActivity extends Activity {
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
