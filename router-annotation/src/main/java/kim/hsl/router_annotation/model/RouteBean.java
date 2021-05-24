@@ -47,6 +47,14 @@ public class RouteBean {
         this.routeGroup = route.group();
     }
 
+    public RouteBean(Type type, Class<?> clazz, String routeAddress, String routeGroup) {
+        this.type = type;
+        this.element = null;
+        this.clazz = clazz;
+        this.routeAddress = routeAddress;
+        this.routeGroup = routeGroup;
+    }
+
     public RouteBean(Type type, Element element, Class<?> clazz, String routeAddress, String routeGroup) {
         this.type = type;
         this.element = element;

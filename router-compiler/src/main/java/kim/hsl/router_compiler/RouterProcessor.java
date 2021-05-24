@@ -1,9 +1,19 @@
 package kim.hsl.router_compiler;
 
 import com.google.auto.service.AutoService;
+import com.squareup.javapoet.ClassName;
+import com.squareup.javapoet.JavaFile;
+import com.squareup.javapoet.MethodSpec;
+import com.squareup.javapoet.ParameterSpec;
+import com.squareup.javapoet.ParameterizedTypeName;
+import com.squareup.javapoet.TypeSpec;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.Filer;
@@ -16,6 +26,7 @@ import javax.annotation.processing.SupportedOptions;
 import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
+import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
@@ -24,6 +35,8 @@ import javax.tools.Diagnostic;
 
 import kim.hsl.router_annotation.Route;
 import kim.hsl.router_annotation.model.RouteBean;
+
+import static javax.lang.model.element.Modifier.PUBLIC;
 
 // 注解处理器接收的参数
 @SupportedOptions("moduleName")
@@ -58,6 +71,20 @@ public class RouterProcessor extends AbstractProcessor {
      * 获取的 moduleName 参数
      */
     private String mModuleName;
+
+    /**
+     * 管理路由信息
+     * 键 ( Key ) : 路由分组名称
+     * 值 ( Value ) : 路由信息集合
+     */
+    private HashMap<String, ArrayList<RouteBean>> mGroupMap = new HashMap<>();
+
+    /**
+     * 管理 路由表信息
+     * 键 ( Key ) : 组名
+     * 值 ( Value ) : 类名
+     */
+    private Map<String, String> mRootMap = new TreeMap<>();
 
     /**
      * 该函数在初始化时调用 , 相当于构造函数
@@ -105,39 +132,103 @@ public class RouterProcessor extends AbstractProcessor {
         Set<? extends Element> routeElements = roundEnvironment.getElementsAnnotatedWith(Route.class);
         generateRouteClass(routeElements);
 
-        /*for (TypeElement typeElement: set){
+        // 生成 路由组件 分组表 对应的 Java 类
+        generateGroupTable();
 
-            // 遍历注解节点
-            mMessager.printMessage(Diagnostic.Kind.NOTE, "SupportedAnnotationTypes : " + typeElement.getQualifiedName());
+        // 生成 路由组件 路由表 对应的 Java 类
+        return false;
+    }
 
+    /**
+     * 生成 路由组件 分组表 对应的 Java 类
+     */
+    private void generateGroupTable() {
+        // 获取要生成的类 需要实现的接口节点
+        TypeElement iRouteGroup = mElementUtils.getTypeElement(
+                "kim.hsl.route_core.template.IRouteGroup");
 
-            // 生成 public static void main(String[] args) 函数
-            MethodSpec main = MethodSpec.methodBuilder("main")
-                    .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
-                    .returns(void.class)
-                    .addParameter(String[].class, "args")
-                    .addStatement("$T.out.println($S)", System.class, "Hello, JavaPoet!")
+        // 打印类节点全类名
+        mMessager.printMessage(Diagnostic.Kind.NOTE,
+                "打印类节点 iRouteGroup : " + iRouteGroup.getQualifiedName());
+
+        // 生成参数类型 Map<String, RouteBean> atlas
+        ParameterizedTypeName atlasType = ParameterizedTypeName.get(
+                ClassName.get(Map.class),
+                ClassName.get(String.class),
+                ClassName.get(RouteBean.class)
+        );
+
+        // 生成参数 Map<String, RouteBean> atlas
+        ParameterSpec atlasValue = ParameterSpec.builder(atlasType, "atlas").build();
+
+        // 遍历 HashMap<String, ArrayList<RouteBean>> mGroupMap = new HashMap<>() 路由分组
+        // 为每个 路由分组 创建一个类
+        for (Map.Entry<String, ArrayList<RouteBean>> entry : mGroupMap.entrySet()){
+            // 创建函数 loadInto
+            MethodSpec.Builder methodBuilder = MethodSpec.methodBuilder("loadInto")
+                    .addModifiers(Modifier.PUBLIC)
+                    .addAnnotation(Override.class)
+                    .addParameter(atlasValue);
+
+            // 函数体中的代码生成
+
+            // 获取 ArrayList<RouteBean> 数据
+            ArrayList<RouteBean> groupRoutes = entry.getValue();
+            // 组名
+            String groupName = "";
+
+            // 生成函数体代码
+            for (RouteBean routeBean : groupRoutes){
+                // 获取组名
+                groupName = routeBean.getRouteGroup();
+
+                // $S 表示字符串
+                // $T 表示类
+                // $L 表示字面量 , 原封不动的字符串替换
+                methodBuilder.addStatement("atlas.put($S, new $T($T.$L, $T.class, $S, $S))",
+                        // $S 字符串 : "main"
+                        routeBean.getRouteGroup(),
+                        // $T 类名 : RouteBean
+                        ClassName.get(RouteBean.class),
+                        // $T 类名 : Type
+                        ClassName.get(RouteBean.Type.class),
+                        // $L 字面量 : ACTIVITY
+                        routeBean.getType(),
+                        // $T 类名 : kim.hsl.component.MainActivity 类
+                        ClassName.get((TypeElement) routeBean.getElement()),
+                        // $S 字符串 : "/app/MainActivity"
+                        routeBean.getRouteAddress(),
+                        // $S 字符串 : "app"
+                        routeBean.getRouteGroup());
+            }
+
+            // 创建类
+
+            // 构造类名  Router_Group_main
+            String groupClassName = "Router_Group_" + groupName;
+
+            // 创建类
+            TypeSpec typeSpec = TypeSpec.classBuilder(groupClassName)
+                    .addSuperinterface(ClassName.get(iRouteGroup))
+                    .addModifiers(PUBLIC)
+                    .addMethod(methodBuilder.build())
                     .build();
 
-            // 指定 public final class HelloWorld 类
-            TypeSpec helloWorld = TypeSpec.classBuilder("HelloWorld")
-                    .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
-                    .addMethod(main)
-                    .build();
+            // 生成 Java 源码文件
+            JavaFile javaFile = JavaFile.builder("kim.hsl.router", typeSpec).build();
 
-            // 正式在 "com.example.helloworld" 包名下创建 HelloWorld 类
-            JavaFile javaFile = JavaFile.builder("com.example.helloworld", helloWorld)
-                    .build();
-
+            // 将 Java 源文件写出到相应目录中
             try {
                 javaFile.writeTo(mFiler);
             } catch (IOException e) {
                 e.printStackTrace();
             }
 
-        }*/
-        return false;
+            // 统计路由表信息
+            mRootMap.put(groupName, groupClassName);
+        }
     }
+
 
     private void generateRouteClass(Set<? extends Element> routeElements) {
         // 获取 android.app.Activity 类型的注解节点
@@ -171,10 +262,34 @@ public class RouterProcessor extends AbstractProcessor {
                 mMessager.printMessage(Diagnostic.Kind.NOTE,
                         "打印路由信息 : " + routeBean.toString());
 
+                // 处理路由信息分组
+                routeGroup(routeBean);
+
             }else{
                 // 该节点不是 android.app.Activity 类型的
                 throw new RuntimeException("@Route 注解节点类型错误");
             }
+        }
+    }
+
+    /**
+     * 处理路由信息分组
+     * @param routeBean
+     */
+    private void routeGroup(RouteBean routeBean) {
+        // 首先从 groupMap 集合中获取该分组的所有 路由信息
+        ArrayList<RouteBean> routeBeans = mGroupMap.get(routeBean.getRouteGroup());
+
+        if (routeBeans == null){
+            // 如果从 mGroupMap 获取的该分组的路由信息集合为空
+            // 则创建新集合, 放置路由信息, 并加入到 mGroupMap 中
+            routeBeans = new ArrayList<>();
+            routeBeans.add(routeBean);
+            mGroupMap.put(routeBean.getRouteGroup(), routeBeans);
+        }else{
+            // 从 mGroupMap 获取的路由分组对应的路由信息集合不为空
+            // 直接添加 路由信息 即可
+            routeBeans.add(routeBean);
         }
     }
 

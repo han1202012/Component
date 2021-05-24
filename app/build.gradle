@@ -55,10 +55,13 @@ dependencies {
     androidTestImplementation 'androidx.test.ext:junit:1.1.2'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
 
-    // 引入注解处理器依赖
+    // 引入 注解处理器
     annotationProcessor project(path: ':router-compiler')
-    // 引入注解
+    // 引入 编译时注解
     implementation project(path: ':router-annotation')
+
+    // 引入基础注解库 , 包含了 router-core
+    implementation project(path: ':base')
 
     if (isModuleMode){
         // 集成模式下才能引用这两个 Library Module
