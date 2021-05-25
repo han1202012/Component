@@ -14,7 +14,7 @@ public class RouteBean {
      */
     public enum Type {
         ACTIVITY,
-        SERVICE
+        ISERVICE
     }
 
     private Type type;

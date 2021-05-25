@@ -58,7 +58,7 @@ dependencies {
     // 引入 注解处理器
     annotationProcessor project(path: ':router-compiler')
     // 引入 编译时注解
-    implementation project(path: ':router-annotation')
+    //implementation project(path: ':router-annotation')
 
     // 引入基础注解库 , 包含了 router-core
     implementation project(path: ':base')

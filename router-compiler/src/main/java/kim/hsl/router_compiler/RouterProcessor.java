@@ -7,6 +7,7 @@ import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.ParameterSpec;
 import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeSpec;
+import com.squareup.javapoet.WildcardTypeName;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -122,8 +123,10 @@ public class RouterProcessor extends AbstractProcessor {
      */
     @Override
     public boolean process(Set<? extends TypeElement> set, RoundEnvironment roundEnvironment) {
+        mMessager.printMessage(Diagnostic.Kind.NOTE, mModuleName + " process ");
         if (set == null || set.isEmpty()){
             // 如果没有检测到注解 , 直接退出
+            mMessager.printMessage(Diagnostic.Kind.NOTE, "检测到注解为空 , 直接退出 mModuleName : " + mModuleName);
             return false;
         }
 
@@ -132,11 +135,75 @@ public class RouterProcessor extends AbstractProcessor {
         Set<? extends Element> routeElements = roundEnvironment.getElementsAnnotatedWith(Route.class);
         generateRouteClass(routeElements);
 
-        // 生成 路由组件 分组表 对应的 Java 类
+        // 生成 路由组件 分组表 对应的 Java 路由表 类
         generateGroupTable();
 
-        // 生成 路由组件 路由表 对应的 Java 类
-        return false;
+        // 生成 Root 路由表 , 组名 <-> 路由表类
+        generateRootTable();
+
+        return true;
+    }
+
+    /**
+     * 生成 Root 表
+     */
+    private void generateRootTable() {
+        // 获取 kim.hsl.route_core.template.IRouteGroup 类节点
+        TypeElement iRouteGroup = mElementUtils.getTypeElement("kim.hsl.route_core.template.IRouteGroup");
+        // 获取 kim.hsl.route_core.template.IRouteRoot 类节点
+        TypeElement iRouteRoot = mElementUtils.getTypeElement("kim.hsl.route_core.template.IRouteRoot");
+
+        // 生成参数类型名称
+        // Map<String,Class<? extends IRouteGroup>> routes>
+        ParameterizedTypeName routesTypeName = ParameterizedTypeName.get(
+                ClassName.get(Map.class),
+                ClassName.get(String.class),
+                ParameterizedTypeName.get(
+                        ClassName.get(Class.class),
+                        WildcardTypeName.subtypeOf(ClassName.get(iRouteGroup))
+                )
+        );
+
+        // 生成参数
+        // Map<String,Class<? extends IRouteGroup>> routes> routes
+        ParameterSpec rootParameterSpec = ParameterSpec.builder(routesTypeName, "routes")
+                .build();
+
+        // 生成函数
+        // public void loadInfo(Map<String,Class<? extends IRouteGroup>> routes> routes)
+        MethodSpec.Builder loadIntoMethodBuilder = MethodSpec.methodBuilder("loadInto")
+                .addAnnotation(Override.class)
+                .addModifiers(Modifier.PUBLIC)
+                .addParameter(rootParameterSpec);
+
+        // 生成函数体
+        for (Map.Entry<String, String> entry : mRootMap.entrySet()) {
+            loadIntoMethodBuilder.addStatement(
+                    "routes.put($S, $T.class)",
+                    entry.getKey(),
+                    ClassName.get("kim.hsl.router", entry.getValue())
+            );
+        }
+
+        // 生成 Root 类
+        String rootClassName = "Router_Root_" + mModuleName;
+
+        // 创建 Java 类
+        TypeSpec typeSpec = TypeSpec.classBuilder(rootClassName)
+                .addSuperinterface(ClassName.get(iRouteRoot))
+                .addModifiers(PUBLIC)
+                .addMethod(loadIntoMethodBuilder.build())
+                .build();
+
+        // 生成 Java 源文件
+        JavaFile javaFile = JavaFile.builder("kim.hsl.router", typeSpec).build();
+
+        // 写出到文件中
+        try {
+            javaFile.writeTo(mFiler);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     /**
@@ -149,7 +216,7 @@ public class RouterProcessor extends AbstractProcessor {
 
         // 打印类节点全类名
         mMessager.printMessage(Diagnostic.Kind.NOTE,
-                "打印类节点 iRouteGroup : " + iRouteGroup.getQualifiedName());
+                "打印 路由表 需要实现的接口节点 iRouteGroup : " + iRouteGroup.getQualifiedName());
 
         // 生成参数类型 Map<String, RouteBean> atlas
         ParameterizedTypeName atlasType = ParameterizedTypeName.get(
@@ -219,9 +286,16 @@ public class RouterProcessor extends AbstractProcessor {
 
             // 将 Java 源文件写出到相应目录中
             try {
+                mMessager.printMessage(Diagnostic.Kind.NOTE,
+                        "输出文件 : " + groupClassName);
                 javaFile.writeTo(mFiler);
             } catch (IOException e) {
                 e.printStackTrace();
+                mMessager.printMessage(Diagnostic.Kind.NOTE,
+                        "输出文件出现异常");
+            }finally {
+                mMessager.printMessage(Diagnostic.Kind.NOTE,
+                        "输出文件完毕");
             }
 
             // 统计路由表信息
@@ -233,6 +307,8 @@ public class RouterProcessor extends AbstractProcessor {
     private void generateRouteClass(Set<? extends Element> routeElements) {
         // 获取 android.app.Activity 类型的注解节点
         TypeElement activityElement = mElementUtils.getTypeElement("android.app.Activity");
+        // 获取 组件间共享服务 的接口, 该接口仅用于表示组件类型
+        TypeElement iServiceElement = mElementUtils.getTypeElement("kim.hsl.route_core.template.IService");
 
         // 处理 @Route(path = "app/MainActivity") 节点
         for (Element element : routeElements) {
@@ -240,10 +316,6 @@ public class RouterProcessor extends AbstractProcessor {
             Route route = element.getAnnotation(Route.class);
             // 路由表中的单个路由对象
             RouteBean routeBean = null;
-
-            // 打印类节点全类名
-            mMessager.printMessage(Diagnostic.Kind.NOTE,
-                    "打印类节点 typeElement : " + activityElement.getQualifiedName());
 
             // 判断 typeMirror 注解节点是否是 Activity 类型
             if (mTypeUtils.isSubtype(element.asType(), activityElement.asType())) {
@@ -254,21 +326,28 @@ public class RouterProcessor extends AbstractProcessor {
                         null,    // 类对象
                         route.path(),   // 路由地址
                         route.group()); // 路由组
-
-                // 检查路由地址
-                checkRouteAddress(routeBean);
-
-                // 打印路由信息
-                mMessager.printMessage(Diagnostic.Kind.NOTE,
-                        "打印路由信息 : " + routeBean.toString());
-
-                // 处理路由信息分组
-                routeGroup(routeBean);
-
+            }else if (mTypeUtils.isSubtype(element.asType(), iServiceElement.asType())) {
+                // 该节点是 kim.hsl.route_core.template.IService 类型的
+                routeBean = new RouteBean(
+                        RouteBean.Type.ISERVICE,    // 路由对象类型
+                        element,         // 路由节点
+                        null,    // 类对象
+                        route.path(),   // 路由地址
+                        route.group()); // 路由组
             }else{
                 // 该节点不是 android.app.Activity 类型的
                 throw new RuntimeException("@Route 注解节点类型错误");
             }
+
+            // 检查路由地址
+            checkRouteAddress(routeBean);
+
+            // 打印路由信息
+            mMessager.printMessage(Diagnostic.Kind.NOTE,
+                    "打印路由信息 : " + routeBean.toString());
+
+            // 处理路由信息分组
+            routeGroup(routeBean);
         }
     }
 

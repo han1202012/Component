@@ -20,7 +20,7 @@ ext{
     applicationId = [
             "app" : "kim.hsl.component",
             "library1" : "kim.hsl.library1",
-            "mylibrary2" : "kim.hsl.library2",
+            "library2" : "kim.hsl.library2",
     ]
 
     // androidx 版本号
