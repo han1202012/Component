@@ -97,7 +97,7 @@ public class RouterProcessor extends AbstractProcessor {
         // 获取打印日志接口
         this.mMessager = processingEnvironment.getMessager();
         // 测试日志打印
-        mMessager.printMessage(Diagnostic.Kind.NOTE, "Messager Print Log");
+        //mMessager.printMessage(Diagnostic.Kind.NOTE, "RouterProcessor : Messager Print Log");
 
         this.mFiler = processingEnvironment.getFiler();
         this.mElementUtils = processingEnvironment.getElementUtils();
@@ -108,7 +108,7 @@ public class RouterProcessor extends AbstractProcessor {
         Map<String, String> options = processingEnvironment.getOptions();
         if (options != null){
             mModuleName = options.get("moduleName");
-            mMessager.printMessage(Diagnostic.Kind.NOTE, "打印 moduleName 参数 : " + mModuleName);
+            //mMessager.printMessage(Diagnostic.Kind.NOTE, "RouterProcessor : 打印 moduleName 参数 : " + mModuleName);
         }
     }
 
@@ -123,10 +123,10 @@ public class RouterProcessor extends AbstractProcessor {
      */
     @Override
     public boolean process(Set<? extends TypeElement> set, RoundEnvironment roundEnvironment) {
-        mMessager.printMessage(Diagnostic.Kind.NOTE, mModuleName + " process ");
+        //mMessager.printMessage(Diagnostic.Kind.NOTE, "RouterProcessor : " + mModuleName + " process ");
         if (set == null || set.isEmpty()){
             // 如果没有检测到注解 , 直接退出
-            mMessager.printMessage(Diagnostic.Kind.NOTE, "检测到注解为空 , 直接退出 mModuleName : " + mModuleName);
+            //mMessager.printMessage(Diagnostic.Kind.NOTE, "RouterProcessor : 检测到注解为空 , 直接退出 mModuleName : " + mModuleName);
             return false;
         }
 
@@ -215,8 +215,7 @@ public class RouterProcessor extends AbstractProcessor {
                 "kim.hsl.route_core.template.IRouteGroup");
 
         // 打印类节点全类名
-        mMessager.printMessage(Diagnostic.Kind.NOTE,
-                "打印 路由表 需要实现的接口节点 iRouteGroup : " + iRouteGroup.getQualifiedName());
+        //mMessager.printMessage(Diagnostic.Kind.NOTE, "打印 路由表 需要实现的接口节点 iRouteGroup : " + iRouteGroup.getQualifiedName());
 
         // 生成参数类型 Map<String, RouteBean> atlas
         ParameterizedTypeName atlasType = ParameterizedTypeName.get(
@@ -286,16 +285,13 @@ public class RouterProcessor extends AbstractProcessor {
 
             // 将 Java 源文件写出到相应目录中
             try {
-                mMessager.printMessage(Diagnostic.Kind.NOTE,
-                        "输出文件 : " + groupClassName);
+                //mMessager.printMessage(Diagnostic.Kind.NOTE, "输出文件 : " + groupClassName);
                 javaFile.writeTo(mFiler);
             } catch (IOException e) {
                 e.printStackTrace();
-                mMessager.printMessage(Diagnostic.Kind.NOTE,
-                        "输出文件出现异常");
+                //mMessager.printMessage(Diagnostic.Kind.NOTE, "输出文件出现异常");
             }finally {
-                mMessager.printMessage(Diagnostic.Kind.NOTE,
-                        "输出文件完毕");
+                //mMessager.printMessage(Diagnostic.Kind.NOTE, "输出文件完毕");
             }
 
             // 统计路由表信息
@@ -343,8 +339,7 @@ public class RouterProcessor extends AbstractProcessor {
             checkRouteAddress(routeBean);
 
             // 打印路由信息
-            mMessager.printMessage(Diagnostic.Kind.NOTE,
-                    "打印路由信息 : " + routeBean.toString());
+            //mMessager.printMessage(Diagnostic.Kind.NOTE, "打印路由信息 : " + routeBean.toString());
 
             // 处理路由信息分组
             routeGroup(routeBean);
@@ -401,8 +396,7 @@ public class RouterProcessor extends AbstractProcessor {
             }
 
             // 打印组名
-            mMessager.printMessage(Diagnostic.Kind.NOTE,
-                    "打印路由地址 " + routeAddress + " 的组名为 " + group);
+            //mMessager.printMessage(Diagnostic.Kind.NOTE, "打印路由地址 " + routeAddress + " 的组名为 " + group);
 
             // 正式设置路由地址分组
             routeBean.setRouteGroup(group);
